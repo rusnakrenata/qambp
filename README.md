@@ -1,6 +1,6 @@
 # Minimum Bisection Problem: Machine Learning–Based Penalty Parameter Tuning for Optimization on Quantum Annealers
 
-[[PAPER]]() &nbsp;|&nbsp; [Setup](#setup) &nbsp;|&nbsp; [Reproducing the experiments](#reproducing-the-experiments) &nbsp;|&nbsp; [Method](#method) &nbsp;|&nbsp; [Results](#results)
+[[PAPER]]() &nbsp;|&nbsp; [Setup](#setup) &nbsp;|&nbsp; [Running the pipeline](#running-the-pipeline) &nbsp;|&nbsp; [Method](#method) &nbsp;|&nbsp; [Results](#results)
 
 **QaMBP** is the reference implementation for the paper above. It covers two stages:
 
@@ -74,28 +74,30 @@ The tests stub the Ocean SDK and use an in-memory database, so they run without 
 
 ---
 
-## Reproducing the experiments
+## Running the pipeline
 
-The pipeline runs in three steps. Steps 1 and 3 consume D-Wave Leap solver time.
+The experiment database used in the paper is not distributed with this repository, and the graphs are generated at random, so runs on a fresh install produce a new dataset rather than the exact numbers reported in the paper. The pipeline below is the procedure those results were produced with.
+
+It runs in three steps. Steps 1 and 3 consume D-Wave Leap solver time.
 
 ```bash
 cd src
 
 # 1. Calibration: sweep the lambda_mult grid (Table 3) and record results
-python main.py --mode hybrid --scope 607
-python main.py --mode qpu    --scope 70     # optional, n <= 100
+python main.py --mode hybrid --scope 100
+python main.py --mode qpu    --scope 50     # optional, n <= 100
 
 # 2. Train the regressors on the collected data
 python gbr_prediction.py --train
 
 # 3. Evaluation: predict lambda per graph and solve once (Algorithm 3)
-python predict_and_evaluate.py --mode hybrid --scope 126
-python predict_and_evaluate.py --mode qpu    --scope 70
+python predict_and_evaluate.py --mode hybrid --scope 50
+python predict_and_evaluate.py --mode qpu    --scope 50
 ```
 
-Both entry points accept `--seed` for reproducible graph selection. Results land in the `graphs` and `partitions` tables and are analysed with the queries in [`sql/`](sql/) and the notebook [`src/analysis.ipynb`](src/analysis.ipynb).
+`--scope` sets how many graphs to generate; the values above are illustrative. Both entry points accept `--seed` for reproducible graph selection. Results land in the `graphs` and `partitions` tables and are analysed with the queries in [`sql/`](sql/) and the notebook [`src/analysis.ipynb`](src/analysis.ipynb).
 
-Trained models are shipped in `src/gbr/`, so step 3 can be run without repeating steps 1–2.
+Trained models are shipped in `src/gbr/`, so step 3 can be run on its own without repeating steps 1–2. Step 1 is only needed if you want to rebuild a calibration dataset from scratch; note that step 2 retrains and overwrites those shipped models.
 
 ---
 
