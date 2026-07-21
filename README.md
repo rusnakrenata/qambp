@@ -62,15 +62,7 @@ Create an empty database once; the tables are created automatically on first run
 CREATE DATABASE graphPartitioning;
 ```
 
-`DATABASE_URL` overrides the individual `DB_*` settings if you need a different backend (the test suite uses `sqlite://`).
-
-### Verifying the install
-
-```bash
-python -m pytest tests/ -v
-```
-
-The tests stub the Ocean SDK and use an in-memory database, so they run without Leap credentials or a live server.
+`DATABASE_URL` overrides the individual `DB_*` settings if you need a different backend.
 
 ---
 
@@ -270,7 +262,6 @@ PyMetis was on average about three times faster than the total QA HS time for n 
 | `src/store_into_db.py` | Persists graphs and partition results |
 | `src/analysis.ipynb` | Figures and analysis |
 | `sql/` | Analysis queries backing the tables and figures |
-| `tests/` | Regression tests for sample selection, schema and prediction |
 
 ### Database
 
