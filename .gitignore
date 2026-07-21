@@ -1,0 +1,21 @@
+# Environment / credentials
+.env
+dwave.conf
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env/
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# pytest
+.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db

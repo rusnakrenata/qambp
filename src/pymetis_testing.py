@@ -16,9 +16,14 @@ def run_pymetis_partition(G):
         _, partition = pymetis.part_graph(2, adjacency=G)
         duration = time.time() - start
 
+        # PyMetis >= 2025.x returns an array.array, which is not JSON
+        # serializable and would break the JSON column in `graphs`.
+        partition = [int(x) for x in partition]
+
         intra_edges = sum(1 for u, v in G.edges() if partition[u] == partition[v])
         inter_edges = sum(1 for u, v in G.edges() if partition[u] != partition[v])
-    except Exception:
+    except Exception as exc:
+        print(f"PyMetis partitioning failed: {exc}")
         partition = []
         intra_edges = inter_edges = 0
         duration = 0.0

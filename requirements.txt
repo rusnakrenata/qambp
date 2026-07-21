@@ -1,3 +1,4 @@
+# Core experiment pipeline
 dwave-ocean-sdk==8.1.0
 PyMetis==2023.1.1
 PyMySQL==1.1.1
@@ -6,3 +7,13 @@ scikit-learn==1.6.1
 networkx==3.4.2
 pandas==2.2.3
 numpy==2.2.1
+
+# Configuration (.env support)
+python-dotenv==1.0.1
+
+# Analysis notebook and statistical tests
+matplotlib==3.10.0
+scipy==1.15.1
+
+# Test suite
+pytest==8.3.4

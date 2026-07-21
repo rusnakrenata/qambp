@@ -1,6 +1,6 @@
 from database_tables import Graph, Partition
 from qa_testing import qa_testing
-import datetime, time, json
+import datetime, time, json, uuid
 import numpy as np
 
 
@@ -19,8 +19,15 @@ def store_graph_to_db(session, graph_data, pymetis_data, kl_data, i='test', desc
     """
     timestamp = datetime.datetime.now()
 
+    # `name` is UNIQUE. Second resolution alone collides whenever two graphs
+    # are generated within the same second, which happens routinely for the
+    # small graphs used in the QPU experiments, so include microseconds and a
+    # short random suffix.
+    stamp = timestamp.strftime('%Y%m%d_%H%M%S_%f')
+    suffix = uuid.uuid4().hex[:6]
+
     new_graph = Graph(
-        name=f"Graph_{timestamp.strftime('%Y%m%d_%H%M%S')}_{i}",
+        name=f"Graph_{stamp}_{i}_{suffix}",
         description=description,
         nr_of_nodes=graph_data["nr_of_nodes"],
         edge_probability=graph_data["edge_probability"],
@@ -34,7 +41,9 @@ def store_graph_to_db(session, graph_data, pymetis_data, kl_data, i='test', desc
         nr_of_edges=graph_data["nr_of_edges"],
         kernighan_lin_inter_edges=kl_data["kl_inter_edges"],
         duration_keringham_lin=kl_data["duration_keringham_lin"],
-        duration_pymetis=graph_data["duration_pymetis"]
+        # NOTE: the PyMetis runtime is produced by run_pymetis_partition(),
+        # not by generate_graph().
+        duration_pymetis=pymetis_data["duration_pymetis"]
     )
 
     session.add(new_graph)
@@ -43,29 +52,29 @@ def store_graph_to_db(session, graph_data, pymetis_data, kl_data, i='test', desc
     return new_graph
 
 
-def store_partition_to_db(session, G, db_graph, lambda_mult, comp_type, num_reads):
+def store_partition_to_db(session, G, db_graph, lambda_total, comp_type, num_reads,
+                          lambda_mult=None):
     """
     Run the partitioning algorithm for a single graph and store the results in the database.
 
     Parameters:
         session: Database session
         G: NetworkX graph
-        lambda_est: Initial gamma value
-        lambda_mults: List of gamma coefficients
-        comp_type: Type of computation to perform
-        num_reads: Number of reads for the QPU
+        lambda_total: Penalty parameter actually used in the QUBO
+                      (lambda_est * lambda_mult, see Eq. 27)
+        comp_type: Type of computation to perform ('hybrid', 'qpu' or 'test')
+        num_reads: Number of reads for the QPU / classical sampler
+        lambda_mult: The multiplier alone, stored so the calibration
+                     queries do not have to recover it by division.
 
     Returns:
-        None
+        The committed Partition instance.
     """
-    # Run the partitioning algorithm for each gamma coefficient
-
-    # Run the partitioning algorithm
-
     start_time = time.time()
 
-
-    inter_edges, partition, duration_qa = qa_testing(G, lambda_mult, comp_type=comp_type, num_reads=num_reads)
+    inter_edges, partition, duration_qa = qa_testing(
+        G, lambda_total, comp_type=comp_type, num_reads=num_reads
+    )
     end_time = time.time()
     duration_full =end_time - start_time
 
@@ -83,7 +92,8 @@ def store_partition_to_db(session, G, db_graph, lambda_mult, comp_type, num_read
     new_partition = Partition(
         id=int(new_id),
         graph_id=int(db_graph.id),
-        lambda_total=float(lambda_mult),
+        lambda_total=float(lambda_total),
+        lambda_mult=float(lambda_mult) if lambda_mult is not None else None,
         comp_type=comp_type,
         qa_inter_edges=int(inter_edges),
         nodes=json.dumps(np.array(partition, dtype=np.int8).astype(int).tolist()),
@@ -94,3 +104,5 @@ def store_partition_to_db(session, G, db_graph, lambda_mult, comp_type, num_read
     # Add the partition to the session
     session.add(new_partition)
     session.commit()
+
+    return new_partition

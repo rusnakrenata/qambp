@@ -1,14 +1,30 @@
+import os
+
 from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, Float, JSON
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
+# Load variables from a local .env file if python-dotenv is installed.
+# The repository ships a .env.example template; copy it to .env and fill it in.
+try:
+    from dotenv import load_dotenv
 
-# Connection string
-db_user = "user"
-db_password = "password"
-db_host = "localhost"
-db_name = "graphPartitioning"
+    load_dotenv()
+except ImportError:  # pragma: no cover - dotenv is a convenience, not a requirement
+    pass
 
-connection_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}"
+# Connection settings are read from the environment so that no credentials
+# are committed to the repository.
+db_user = os.getenv("DB_USER", "user")
+db_password = os.getenv("DB_PASSWORD", "password")
+db_host = os.getenv("DB_HOST", "localhost")
+db_port = os.getenv("DB_PORT", "3306")
+db_name = os.getenv("DB_NAME", "graphPartitioning")
+
+# DATABASE_URL takes precedence when set, which allows pointing the code at
+# a throwaway backend (e.g. sqlite:///test.db) without a MariaDB server.
+connection_url = os.getenv("DATABASE_URL") or (
+    f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+)
 
 # Create SQLAlchemy engine
 engine = create_engine(connection_url)
@@ -20,12 +36,19 @@ try:
 except Exception as e:
     print(f"Error connecting to MariaDB: {e}")
 
+
+DESCRIPTION_CALIBRATION = "No description"   # lambda_mult sweep, hybrid solver
+DESCRIPTION_EVALUATION = "regression_KLPM"   # GBR-predicted lambda, hybrid solver
+DESCRIPTION_QPU = "qpu"                      # direct-QPU runs
+
 Base = declarative_base()
 # Graphs Table
 class Graph(Base):
     __tablename__ = 'graphs'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String, nullable=False, unique=True)
+    # NOTE: MySQL/MariaDB requires an explicit VARCHAR length; a bare String
+    # makes Base.metadata.create_all() fail on a fresh database.
+    name = Column(String(255), nullable=False, unique=True)
     description = Column(Text)
     nr_of_nodes = Column(Integer) 
     edge_probability = Column(Float)

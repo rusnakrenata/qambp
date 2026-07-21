@@ -1,0 +1,7 @@
+# Normalise line endings so Windows and Linux checkouts produce identical
+# diffs. Without this, editing a file on Windows rewrites every line.
+* text=auto eol=lf
+
+# Binary assets must never be converted
+*.png binary
+*.pkl binary
