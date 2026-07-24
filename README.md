@@ -1,6 +1,6 @@
 # Minimum Bisection Problem: Machine Learning–Based Penalty Parameter Tuning for Optimization on Quantum Annealers
 
-[[PAPER]]() &nbsp;|&nbsp; [Setup](#setup) &nbsp;|&nbsp; [Running the pipeline](#running-the-pipeline) &nbsp;|&nbsp; [Method](#method) &nbsp;|&nbsp; [Results](#results)
+[[PAPER]](https://arxiv.org/abs/2509.19005) &nbsp;|&nbsp; [Setup](#setup) &nbsp;|&nbsp; [Running the pipeline](#running-the-pipeline) &nbsp;|&nbsp; [Method](#method) &nbsp;|&nbsp; [Results](#results)
 
 **QaMBP** is the reference implementation for the paper above. It covers two stages:
 
@@ -227,7 +227,7 @@ A two-sided Wilcoxon signed-rank test on the paired cut differences gave W = 0 w
 
 | Strategy for setting λ | Solution found [%] | Hybrid better [%] |
 |---|---|---|
-| λ = max<sub>cut</sub>(p) | 77.93 | 72.71 |
+| λ = λ<sub>init</sub> | 77.93 | 72.71 |
 | λ = λ<sub>est</sub> | 92.03 | 90.20 |
 | λ = λ<sub>est</sub> · λ<sub>mult</sub> | 100.00 | 98.53 |
 | **λ predicted via GBR** | **100.00** | **100.00** |
